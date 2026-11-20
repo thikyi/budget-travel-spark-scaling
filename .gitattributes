@@ -1,0 +1,7 @@
+# Keep Linux line endings for files that run in Cloud Shell / Dataproc,
+# even when the repo is used on Windows.
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.csv -text
+*.txt -text

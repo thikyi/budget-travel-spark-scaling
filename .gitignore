@@ -1,0 +1,14 @@
+# Study notes, drafts, report templates, diagrams and the course PDF - never commit
+Working folder/
+
+# Local test output and Python caches
+tb/
+__pycache__/
+*.pyc
+analysis/results/
+analysis/metrics.jsonl
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
