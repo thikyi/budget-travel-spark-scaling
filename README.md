@@ -1,16 +1,19 @@
 # Budget Travel Spark Scaling
 
 **How well does a real analytics pipeline scale on Apache Spark?** This project runs a budget-travel
-analytics pipeline on Google Cloud Dataproc and measures what happens when (A) the data grows from
-100 MB to 2 GB and (B) the cluster grows from 1 to 5 workers. An optional study (C) tests how the number
-of Spark partitions changes performance.
+analytics pipeline on Google Cloud Dataproc and measures what happens when 
+(A) the data grows from 100 MB to 2 GB and 
+(B) the cluster grows from 1 to 5 workers. An optional study 
+(C) tests how the number of Spark partitions changes performance.
 
 The pipeline ranks travel destinations by a **Budget Value Index**, using 1.56M Airbnb listings,
 0.88M TripAdvisor reviews (VADER sentiment), and Spark MLlib K-Means clustering. It is our COMP541 data
 mining project, rebuilt in PySpark.
 
 **Team:** Thant Thiri Myo Kyi · Angela Johnson · Annabel Tapia
+
 **Course:** COMP 644 Big Data – group project, California State University, Northridge (Fall 2026)
+
 **Stack:** PySpark 3.5 · Spark MLlib · Google Cloud Dataproc 2.2 · Cloud Storage · Bash
 
 
