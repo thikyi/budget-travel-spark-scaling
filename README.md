@@ -14,7 +14,7 @@ mining project, rebuilt in PySpark.
 
 **Course:** COMP 644 Big Data – group project, California State University, Northridge (Fall 2026)
 
-**Stack:** PySpark 3.5 · Spark MLlib · Google Cloud Dataproc 2.2 · Cloud Storage · Bash
+**Stack:** PySpark 3.5 · Spark MLlib · Google Cloud Dataproc 2.3 · Cloud Storage · Bash
 
 
 ## 1. Folder map
@@ -58,10 +58,10 @@ Spark version, and the Spark UI totals (tasks, shuffle read/write, memory/disk s
 
 | | Value |
 |---|---|
-| Master | n2-standard-4 (4 vCPU, 16 GiB), 50 GB disk |
+| Master | n4-standard-4 (4 vCPU, 16 GiB), 50 GB Hyperdisk Balanced boot disk |
 | Workers | n1-standard-2 (2 vCPU, 7.5 GiB), 100 GB disk, **1, 2 or 5** |
 | Region | us-central1, automatic zone |
-| Software | Dataproc image 2.2 (Spark 3.5), JupyterLab component, component gateway |
+| Software | Dataproc image 2.3-debian12 (Spark 3.5), JupyterLab component, component gateway |
 | Safety | `--stop-max-idle=1h` (auto-stop), `--max-age=6h` (auto-delete) |
 | vCPUs used | 4 + 2 × workers → 6 / 8 / 14. Free-trial limit = 16, so **10 workers (24) is not possible** |
 

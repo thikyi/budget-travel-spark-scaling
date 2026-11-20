@@ -6,11 +6,11 @@ export PROJECT_ID="comp644-group-project-514403"   # from the Console welcome pa
 export BUCKET="comp644-budget-travel-514403"       # bucket names are global; change if "already taken"
 
 export REGION="us-central1"                        # zone = automatic (guidelines section 2)
-export IMAGE_VERSION="2.2"                         # Dataproc image 2.2 (Spark 3.5)
+export IMAGE_VERSION="2.3-debian12"                # Dataproc image 2.3 on Debian 12 (Spark 3.5)
 export CLUSTER="comp644-project"                   # one cluster, resized between experiments
 
 # Machines (guidelines section 2) - never change mid-project
-export MASTER_MACHINE="n2-standard-4"              # 4 vCPU, 16 GiB
+export MASTER_MACHINE="n4-standard-4"              # 4 vCPU, 16 GiB (N4 uses a Hyperdisk boot disk)
 export MASTER_DISK_GB=50
 export WORKER_MACHINE="n1-standard-2"              # 2 vCPU, 7.5 GiB each
 export WORKER_DISK_GB=100

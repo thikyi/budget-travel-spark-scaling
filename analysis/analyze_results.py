@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 WORKER_VCPUS = 2       # n1-standard-2
-MASTER_VCPUS = 4       # n2-standard-4
+MASTER_VCPUS = 4       # n4-standard-4
 MB_PER_GB = 1024
 
 # Chart colors and text colors
@@ -249,7 +249,7 @@ def raw_timing_table(runs, out_dir):
 
 def config_cost_table(runs, prices, out_dir):
     table = pd.DataFrame({"workers": sorted(runs["workers"].unique())})
-    table["master"] = "n2-standard-4 (4 vCPU, 16 GiB)"
+    table["master"] = "n4-standard-4 (4 vCPU, 16 GiB)"
     table["worker_type"] = "n1-standard-2 (2 vCPU, 7.5 GiB)"
     table["worker_vcpus"] = table["workers"] * WORKER_VCPUS
     table["total_vcpus"] = table["worker_vcpus"] + MASTER_VCPUS
@@ -277,7 +277,7 @@ def main():
     parser.add_argument("--expB-size", default="2GB")
     parser.add_argument("--bonus-size", default="2GB")
     # Approximate prices incl. the Dataproc fee - check the Google Cloud pricing calculator
-    parser.add_argument("--master-cost", type=float, default=0.23, help="$/hour, n2-standard-4")
+    parser.add_argument("--master-cost", type=float, default=0.23, help="$/hour, n4-standard-4")
     parser.add_argument("--worker-cost", type=float, default=0.115, help="$/hour, n1-standard-2")
     parser.add_argument("--out", default="results")
     args = parser.parse_args()
