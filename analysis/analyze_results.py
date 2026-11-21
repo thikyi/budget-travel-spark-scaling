@@ -33,6 +33,7 @@ import pandas as pd  # noqa: E402
 WORKER_VCPUS = 2       # n1-standard-2
 MASTER_VCPUS = 4       # n4-standard-4
 MB_PER_GB = 1024
+BYTES_PER_MB = 1_000_000  # decimal MB, the same unit as the Spark job and the Spark UI
 
 # Chart colors and text colors
 BLUE, ORANGE, GREEN, YELLOW = "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
@@ -57,7 +58,7 @@ def load_runs(metrics_file):
     runs = [json.loads(line.replace("METRICS_JSON ", "")) for line in lines if line.strip()]
     df = pd.json_normalize(runs)  # nested fields become columns like "stage_s.s1_lodging"
     df["time_s"] = df["job_total_s"]
-    df["input_mb"] = df["input_bytes"] / 1024 ** 2
+    df["input_mb"] = df["input_bytes"] / BYTES_PER_MB
     df["size_mb"] = df["size_label"].map(size_label_to_mb)
     # Experiment C runs store a number here; normal runs store the text "default (file splits)"
     df["expc_partitions"] = pd.to_numeric(df["partitions_setting"], errors="coerce")
