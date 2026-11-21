@@ -60,10 +60,10 @@ def parse_args():
     parser.add_argument("--bucket", required=True, help="gs://bucket, or a local folder for testing")
     parser.add_argument("--size", required=True, help="dataset label, e.g. 100MB or 2GB")
     parser.add_argument("--workers", type=int, required=True, help="worker count, for the record")
-    parser.add_argument("--experiment", default="expA", help="expA, expB, bonus, smoke or warmup")
+    parser.add_argument("--experiment", default="expA", help="expA, expB, expC, smoke or warmup")
     parser.add_argument("--rep", type=int, default=1, help="repeat number (1-3)")
     parser.add_argument("--partitions", type=int, default=0,
-                        help="bonus only: repartition both inputs to N partitions (0 = off)")
+                        help="expC only: repartition both inputs to N partitions (0 = off)")
     return parser.parse_args()
 
 
@@ -206,7 +206,7 @@ def load_inputs(spark, bucket, size, partitions):
     listings = read_csv(spark, f"{data_dir}/airbnb")
     reviews = read_csv(spark, f"{data_dir}/reviews")
     if partitions:
-        # Bonus experiment: the only place where the partition count is changed
+        # Experiment C (the optional bonus): the only place where the partition count is changed
         listings = listings.repartition(partitions)
         reviews = reviews.repartition(partitions)
 

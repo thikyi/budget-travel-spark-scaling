@@ -5,7 +5,7 @@
 #   ./run_experiments.sh smoke         # one quick test run on 100MB
 #   ./run_experiments.sh expA          # Exp A: 2 workers, all sizes, 3 reps   (cluster must have 2 workers)
 #   ./run_experiments.sh expB          # Exp B: 2 GB, 3 reps on the current worker count (1, 2 or 5)
-#   ./run_experiments.sh bonus         # Bonus: 2 GB, 2 workers, partitions 4..64, 3 reps
+#   ./run_experiments.sh expC          # Exp C (bonus): 2 GB, 2 workers, partitions 4..64, 3 reps
 #
 # Built-in rules (guidelines section 5):
 #   - the script reads the real worker count from the cluster, so the record is always correct
@@ -33,7 +33,7 @@ need_workers() {  # stop if the cluster does not have the worker count this expe
 
 warmup() { submit budget_value_job.py --size=100MB --workers="$1" --experiment=warmup --rep=0; }
 
-case "${1:?make-data|smoke|expA|expB|bonus}" in
+case "${1:?make-data|smoke|expA|expB|expC}" in
   make-data)
     submit make_datasets.py --sizes="$DATA_SIZES" ;;
   smoke)
@@ -54,12 +54,12 @@ case "${1:?make-data|smoke|expA|expB|bonus}" in
     for rep in $(seq 1 "$REPS"); do
       submit budget_value_job.py --size="$EXPB_SIZE" --workers="$W" --experiment=expB --rep="$rep"
     done ;;
-  bonus)
+  expC)
     need_workers "$EXPA_WORKERS"; warmup "$EXPA_WORKERS"
     for rep in $(seq 1 "$REPS"); do
-      for n in $BONUS_PARTITIONS; do
-        submit budget_value_job.py --size="$BONUS_SIZE" --workers="$EXPA_WORKERS" \
-               --experiment=bonus --partitions="$n" --rep="$rep"
+      for n in $EXPC_PARTITIONS; do
+        submit budget_value_job.py --size="$EXPC_SIZE" --workers="$EXPA_WORKERS" \
+               --experiment=expC --partitions="$n" --rep="$rep"
       done
     done ;;
 esac

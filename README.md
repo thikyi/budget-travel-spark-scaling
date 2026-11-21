@@ -24,15 +24,15 @@ Project/
 ├── README.md
 ├── spark_app/
 │   ├── make_datasets.py       <- one-time: clean raw CSVs + build 100MB/500MB/1GB/2GB/5GB datasets
-│   └── budget_value_job.py    <- THE timed Spark job (4 stages, prints METRICS_JSON; --partitions for the bonus)
+│   └── budget_value_job.py    <- THE timed Spark job (4 stages, prints METRICS_JSON; --partitions for Experiment C)
 ├── gcp/
 │   ├── config.sh              <- all settings (guideline machine types, sizes, worker counts)
 │   ├── setup.sh               <- turn on APIs, make the bucket, upload code
 │   ├── cluster.sh             <- create / resize / start / delete the ONE project cluster
-│   ├── run_experiments.sh     <- make-data, smoke, expA, expB, bonus
+│   ├── run_experiments.sh     <- make-data, smoke, expA, expB, expC
 │   └── collect_results.sh     <- download metrics + make all tables and graphs
 ├── analysis/
-│   └── analyze_results.py     <- raw timing table, medians, speedup, efficiency, cost, 5 graphs + bonus graph
+│   └── analyze_results.py     <- raw timing table, medians, speedup, efficiency, cost, 5 graphs + Experiment C graph
 ├── lookup/                    <- VADER word list + COMP541 cost/weather table (105 cities)
 ├── test_sample/               <- 1% samples to test on a laptop first
 └── .gitignore                 <- keeps "Working folder/" (notes, drafts, report) out of git
@@ -49,7 +49,7 @@ Project/
 
 **Measured time** = S1 + S2 + S3 + S4. It includes reading the CSVs from the bucket, all processing,
 K-Means training and writing each stage's output. It does **not** include cluster start-up/resize or
-Spark session start-up (logged separately). In the bonus runs it also includes the `repartition(N)` shuffle.
+Spark session start-up (logged separately). In the Experiment C runs it also includes the `repartition(N)` shuffle.
 
 Each run also records: input bytes, input partitions, active executors, executor cores/memory,
 Spark version, and the Spark UI totals (tasks, shuffle read/write, memory/disk spill).
@@ -93,9 +93,9 @@ cd ~ && rm -rf comp541 && cd ~/Project/gcp
 ./run_experiments.sh expA          # 4 sizes x 3 runs; the 2 GB runs also count as B2
 ./cluster.sh delete
 
-# Session 2 (optional bonus) - 2 workers, 2 GB, partitions 4/8/16/32/64 x 3 runs
+# Session 2 (Experiment C, the optional bonus) - 2 workers, 2 GB, partitions 4/8/16/32/64 x 3 runs
 ./cluster.sh create 2
-./run_experiments.sh bonus
+./run_experiments.sh expC
 ./cluster.sh delete
 
 # Session 3 - worker scaling at 2 GB

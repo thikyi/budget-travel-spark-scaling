@@ -26,8 +26,8 @@ export EXPA_SIZES="100MB 500MB 1GB 2GB"            # add 5GB only if the instruc
 export EXPB_SIZE="2GB"
 export EXPB_WORKERS="1 2 5"                        # 10 = optional, needs quota + approval
 
-# Bonus - partition scalability: 2 GB, 1 master + 2 workers, only the partition count changes
-export BONUS_SIZE="2GB"
-export BONUS_PARTITIONS="4 8 16 32 64"
+# Experiment C (the optional bonus) - partition scalability: 2 GB, 1 master + 2 workers, only the partition count changes
+export EXPC_SIZE="2GB"
+export EXPC_PARTITIONS="4 8 16 32 64"
 
 export REPS=3                                      # 3 runs per point; report all runs + the median

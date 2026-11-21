@@ -6,10 +6,10 @@
 #   raw_timing_table.csv      every run (all 3 repeats)
 #   expA_summary.csv          Experiment A, median of the repeats
 #   expB_summary.csv          Experiment B, median of the repeats
-#   bonus_summary.csv         bonus partition study (if it was run)
+#   expC_summary.csv          Experiment C, partition study (if it was run)
 #   config_cost_table.csv     cluster sizes and estimated cost per hour
 #   summary.md                all summary tables in one file
-#   graph1..graph5 *.png      the 5 required graphs, plus the bonus graph and 2 extra graphs
+#   graph1..graph5 *.png      the 5 required graphs, plus graph6 (Experiment C) and 2 extra graphs
 #
 # Formulas (from the project guidelines):
 #   throughput (MB/s)        = input MB / seconds
@@ -18,7 +18,7 @@
 #   cost per run ($)         = (master $/h + N x worker $/h) x TN / 3600
 #
 # Example:
-#   python analyze_results.py metrics.jsonl --expA-workers 2 --expB-size 2GB --bonus-size 2GB
+#   python analyze_results.py metrics.jsonl --expA-workers 2 --expB-size 2GB --expC-size 2GB
 
 import argparse
 import json
@@ -59,8 +59,8 @@ def load_runs(metrics_file):
     df["time_s"] = df["job_total_s"]
     df["input_mb"] = df["input_bytes"] / 1024 ** 2
     df["size_mb"] = df["size_label"].map(size_label_to_mb)
-    # Bonus runs store a number here; normal runs store the text "default (file splits)"
-    df["bonus_partitions"] = pd.to_numeric(df["partitions_setting"], errors="coerce")
+    # Experiment C runs store a number here; normal runs store the text "default (file splits)"
+    df["expc_partitions"] = pd.to_numeric(df["partitions_setting"], errors="coerce")
     return df
 
 
@@ -130,7 +130,7 @@ def stage_bars_by_size(summary, title, path):
 # Experiment A: data grows, cluster fixed
 
 def experiment_a(runs, workers, out_dir):
-    normal_runs = runs[(runs["workers"] == workers) & runs["bonus_partitions"].isna()]
+    normal_runs = runs[(runs["workers"] == workers) & runs["expc_partitions"].isna()]
     summary = median_by(normal_runs, "size_label")
     summary["size_mb"] = summary["size_label"].map(size_label_to_mb)
     summary = summary.sort_values("size_mb").reset_index(drop=True)
@@ -162,7 +162,7 @@ def experiment_a(runs, workers, out_dir):
 # Experiment B: workers grow, data fixed
 
 def experiment_b(runs, size, prices, out_dir):
-    normal_runs = runs[(runs["size_label"] == size) & runs["bonus_partitions"].isna()]
+    normal_runs = runs[(runs["size_label"] == size) & runs["expc_partitions"].isna()]
     summary = median_by(normal_runs, "workers").sort_values("workers").reset_index(drop=True)
 
     baseline = summary.iloc[0]  # should be the 1-worker run
@@ -209,26 +209,26 @@ def cost_bars(summary, size, path):
     save_chart(fig, path)
 
 
-# Bonus: partitions change, everything else fixed
+# Experiment C (the optional bonus): partitions change, everything else fixed
 
-def bonus(runs, size, out_dir):
-    bonus_runs = runs[(runs["size_label"] == size) & runs["bonus_partitions"].notna()]
-    if bonus_runs.empty:
+def experiment_c(runs, size, out_dir):
+    expc_runs = runs[(runs["size_label"] == size) & runs["expc_partitions"].notna()]
+    if expc_runs.empty:
         return None
 
-    summary = median_by(bonus_runs, "bonus_partitions").rename(columns={"bonus_partitions": "partitions"})
+    summary = median_by(expc_runs, "expc_partitions").rename(columns={"expc_partitions": "partitions"})
     summary = summary.sort_values("partitions").reset_index(drop=True)
-    summary.to_csv(out_dir / "bonus_summary.csv", index=False)
+    summary.to_csv(out_dir / "expC_summary.csv", index=False)
 
     best = summary.loc[summary["median_s"].idxmin(), "partitions"]
-    fig, ax = new_chart(f"Bonus - Number of partitions vs execution time ({size}; best = {int(best)})",
+    fig, ax = new_chart(f"Experiment C - Number of partitions vs execution time ({size}; best = {int(best)})",
                         "number of partitions (repartition N)", "execution time (s)")
     plot_measured(ax, summary["partitions"], summary["median_s"])
     ax.set_xscale("log", base=2)  # 4, 8, 16, 32, 64 are evenly spaced on a log-2 axis
     ax.set_xticks(summary["partitions"])
     ax.set_xticklabels([str(int(n)) for n in summary["partitions"]])
     ax.set_ylim(bottom=0)
-    save_chart(fig, out_dir / "bonus_partitions_vs_time.png")
+    save_chart(fig, out_dir / "graph6_expC_partitions_vs_time.png")
     return summary
 
 
@@ -275,7 +275,7 @@ def main():
     parser.add_argument("metrics", help="metrics.jsonl")
     parser.add_argument("--expA-workers", type=int, default=2)
     parser.add_argument("--expB-size", default="2GB")
-    parser.add_argument("--bonus-size", default="2GB")
+    parser.add_argument("--expC-size", default="2GB")
     # Approximate prices incl. the Dataproc fee - check the Google Cloud pricing calculator
     parser.add_argument("--master-cost", type=float, default=0.23, help="$/hour, n4-standard-4")
     parser.add_argument("--worker-cost", type=float, default=0.115, help="$/hour, n1-standard-2")
@@ -290,7 +290,7 @@ def main():
     raw_timing_table(runs, out_dir)
     exp_a = experiment_a(runs, args.expA_workers, out_dir)
     exp_b = experiment_b(runs, args.expB_size, prices, out_dir)
-    bonus_table = bonus(runs, args.bonus_size, out_dir)
+    exp_c = experiment_c(runs, args.expC_size, out_dir)
     config_table = config_cost_table(runs, prices, out_dir)
 
     write_summary(out_dir, len(runs), [
@@ -302,7 +302,7 @@ def main():
          ["workers", "worker_vcpus", "runs", "median_s", "min_s", "max_s", "speedup",
           "ideal_speedup", "relative_efficiency_pct", "cost_per_run_usd"],
          "Speedup and efficiency use the 1-worker median as the baseline (T1)."),
-        (f"Bonus - partition scalability ({args.bonus_size}, {args.expA_workers} workers)", bonus_table,
+        (f"Experiment C - partition scalability ({args.expC_size}, {args.expA_workers} workers)", exp_c,
          ["partitions", "runs", "median_s", "min_s", "max_s"],
          "The time includes the repartition(N) shuffle."),
         ("Configuration and cost", config_table,
