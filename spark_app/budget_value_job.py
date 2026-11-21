@@ -47,6 +47,7 @@ KMEANS_K = 6              # number of clusters (same as COMP541)
 KMEANS_MAX_ITER = 20
 RANDOM_SEED = 42
 BYTES_PER_MB = 1_000_000  # decimal MB, the same unit the Spark UI shows
+ORIGINAL_SIZE = "original"  # the full cleaned data: not sampled, not copied
 
 KMEANS_FEATURES = ["latitude", "longitude", "log_price", "reviews_per_month",
                    "availability_365", "minimum_nights"]
@@ -58,9 +59,9 @@ CSV_OPTIONS = {"header": "true", "quote": '"', "escape": '"'}
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--bucket", required=True, help="gs://bucket, or a local folder for testing")
-    parser.add_argument("--size", required=True, help="dataset label, e.g. 100MB or 2GB")
+    parser.add_argument("--size", required=True, help="dataset label, e.g. 100MB or 2GB, or original")
     parser.add_argument("--workers", type=int, required=True, help="worker count, for the record")
-    parser.add_argument("--experiment", default="expA", help="expA, expB, expC, smoke or warmup")
+    parser.add_argument("--experiment", default="expA", help="expA, expB, expC, validation, smoke or warmup")
     parser.add_argument("--rep", type=int, default=1, help="repeat number (1-3)")
     parser.add_argument("--partitions", type=int, default=0,
                         help="expC only: repartition both inputs to N partitions (0 = off)")
@@ -201,8 +202,16 @@ def bvi_ranking(destinations, lodging, sentiment):
 
 # The run
 
+def dataset_folder(bucket, size):
+    # "original" = the clean base copy of the real data. We use it to check the analytical
+    # results (ranking, clusters), because the bigger sizes contain copied rows.
+    if size == ORIGINAL_SIZE:
+        return f"{bucket}/data/base"
+    return f"{bucket}/data/size={size}"
+
+
 def load_inputs(spark, bucket, size, partitions):
-    data_dir = f"{bucket}/data/size={size}"
+    data_dir = dataset_folder(bucket, size)
     listings = read_csv(spark, f"{data_dir}/airbnb")
     reviews = read_csv(spark, f"{data_dir}/reviews")
     if partitions:
@@ -340,7 +349,7 @@ def main():
         "workers": args.workers,
         "rep": args.rep,
         "partitions_setting": args.partitions or "default (file splits)",
-        "input_bytes": folder_size_bytes(spark, f"{bucket}/data/size={args.size}"),
+        "input_bytes": folder_size_bytes(spark, dataset_folder(bucket, args.size)),
         "input_partitions_airbnb": listings.rdd.getNumPartitions(),
         "input_partitions_reviews": reviews.rdd.getNumPartitions(),
         "active_executors": active_executors(spark_context),

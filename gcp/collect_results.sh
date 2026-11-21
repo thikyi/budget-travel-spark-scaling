@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 source config.sh
 
 gcloud storage cat "gs://$BUCKET/results/metrics/*/part-*" \
-  | grep -v -E '"experiment": "(warmup|smoke)"' > ../analysis/metrics.jsonl
+  | grep -v -E '"experiment": "(warmup|smoke|validation)"' > ../analysis/metrics.jsonl
 echo "runs collected: $(wc -l < ../analysis/metrics.jsonl)"
 
 cd ../analysis

@@ -6,6 +6,7 @@
 #   ./run_experiments.sh expA          # Exp A: 2 workers, all sizes, 3 reps   (cluster must have 2 workers)
 #   ./run_experiments.sh expB          # Exp B: 2 GB, 3 reps on the current worker count (1, 2 or 5)
 #   ./run_experiments.sh expC          # Exp C (bonus): 2 GB, 2 workers, partitions 4..64, 3 reps
+#   ./run_experiments.sh validation    # once: the original (not resized) data, to check the ranking and clusters
 #
 # Built-in rules (guidelines section 5):
 #   - the script reads the real worker count from the cluster, so the record is always correct
@@ -33,9 +34,12 @@ need_workers() {  # stop if the cluster does not have the worker count this expe
 
 warmup() { submit budget_value_job.py --size=100MB --workers="$1" --experiment=warmup --rep=0; }
 
-case "${1:?make-data|smoke|expA|expB|expC}" in
+case "${1:?make-data|smoke|expA|expB|expC|validation}" in
   make-data)
     submit make_datasets.py --sizes="$DATA_SIZES" ;;
+  validation)
+    W=$(current_workers)
+    submit budget_value_job.py --size=original --workers="$W" --experiment=validation --rep=1 ;;
   smoke)
     W=$(current_workers)
     submit budget_value_job.py --size=100MB --workers="$W" --experiment=smoke --rep=1 ;;
