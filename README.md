@@ -7,7 +7,9 @@ It worked, but it ran in pandas on a single machine.
 For COMP 644 (Big Data), we rebuilt the whole pipeline in PySpark and moved it to Google Cloud Dataproc. Then we asked a simple question: **what happens when the data gets bigger, or when we add more machines?** This repo has the code we used to find out.
 
 **Team:** Thant Thiri Myo Kyi, Angela Johnson, Annabel Tapia
+
 **Course:** COMP 644 Big Data, California State University, Northridge, Fall 2026
+
 **Instructor:** Prof. Mahdi Ebrahimi
 
 ## What we tested
