@@ -18,7 +18,7 @@ We run the same Spark job again and again, and change only one thing at a time:
 
 - **Experiment A, more data:** 2 workers stay fixed. The input grows from 100 MB to 500 MB, 1 GB and 2 GB.
 - **Experiment B, more workers:** the input stays at 2 GB. The cluster grows from 1 to 2 to 5 workers.
-- **Experiment C, more partitions (optional):** 2 GB and 2 workers stay fixed. We split the data into 4, 8, 16, 32 and 64 partitions.
+- **Experiment C, more partitions:** 2 GB and 2 workers stay fixed. We split the data into 4, 8, 16, 32 and 64 partitions.
 
 Every setting runs 3 times, and we report the median. Before the timed runs on a fresh or resized cluster, we do one warm-up run that we don't count.
 
