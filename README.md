@@ -44,21 +44,6 @@ The copied data is artificial. It makes Spark work harder, but it doesn't add an
 
 One thing that surprised us early on: the raw CSV files have line breaks inside the review text. Spark can only read a file like that with one task, so nothing runs in parallel. `make_datasets.py` cleans this once and saves the data as normal CSV files of about 128 MB each, which Spark can split.
 
-## What we found so far
-
-**Experiment A (Nov 21):** the data grew 20.5 times (100 MB to 2 GB), but the median time grew only 4.6 times (45 s to 207 s).
-
-| Size | Median time | Throughput |
-|---|---|---|
-| 100 MB | 45.3 s | 2.3 MB/s |
-| 500 MB | 107.4 s | 4.9 MB/s |
-| 1 GB | 163.0 s | 6.6 MB/s |
-| 2 GB | 207.0 s | 10.4 MB/s |
-
-Small data is slow for its size for two reasons. Every run pays a fixed start-up cost for each stage. And 100 MB is only 2 file pieces per table, so only 2 of our 4 worker cores had work to do. From 1 GB up, all 4 cores were busy. The review sentiment stage grew the most, and nothing spilled to disk.
-
-Experiment B is almost done, and Experiment C is next. We'll add their results here when they're finished.
-
 ## The cluster
 
 | | |
@@ -156,4 +141,4 @@ spark-submit --master "local[4]" spark_app/budget_value_job.py --bucket=tb --siz
 
 ## Credits
 
-This project builds on our COMP541 work, "Finding the Best Budget-Friendly Travel Destinations," and we thank our COMP541 teammates for the original analysis: [add names]. The data comes from Inside Airbnb, TripAdvisor reviews, and the VADER sentiment lexicon (Hutto and Gilbert, 2014).
+This project builds on our COMP541 project, "Finding the Best Budget-Friendly Travel Destinations." Thank you to the whole COMP541 team for the original analysis: Annabel Tapia, Angela Johnson, Hasmik Galstyan, Jeffrey Morales Toledo, Josue Sanchez and Thant Thiri Myo Kyi. The data comes from Inside Airbnb, TripAdvisor reviews, and the VADER sentiment lexicon (Hutto and Gilbert, 2014).
