@@ -106,7 +106,7 @@ cd ~/budget-travel-spark-scaling/gcp
 ./run_experiments.sh make-data     # once: builds 100MB, 500MB, 1GB, 2GB and 5GB
 ./run_experiments.sh smoke         # a quick test on 100 MB
 ./run_experiments.sh expA          # Experiment A
-./run_experiments.sh expC          # Experiment C (optional)
+./run_experiments.sh expC          # Experiment C 
 ./run_experiments.sh validation    # one run on the original data, to check the results
 ./cluster.sh delete
 
