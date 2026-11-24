@@ -35,7 +35,7 @@ The timer covers reading the files from Cloud Storage, all 4 stages and writing 
 
 ## About the data
 
-The raw data comes from our COMP541 repo: Inside Airbnb listings, TripAdvisor reviews, and a cost and weather table we built back then. The cleaned original data is about 1.36 GB.
+The raw data comes from our COMP541 repo: Inside Airbnb listings, TripAdvisor reviews, and a cost and weather table we built back then. Together, the 2 raw files are about 1.4 GB (Airbnb 578 MB, TripAdvisor 847 MB).
 
 To get the sizes we needed, we resized it:
 
