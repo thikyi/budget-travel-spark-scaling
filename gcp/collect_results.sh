@@ -12,4 +12,5 @@ echo "runs collected: $(wc -l < ../analysis/metrics.jsonl)"
 cd ../analysis
 pip install -q pandas matplotlib tabulate
 python analyze_results.py metrics.jsonl \
-  --expA-workers "$EXPA_WORKERS" --expB-size "$EXPB_SIZE" --expC-size "$EXPC_SIZE"
+  --expA-workers "$EXPA_WORKERS" --expB-size "$EXPB_SIZE" --expC-size "$EXPC_SIZE" \
+  --expB-extra-size "$EXPB_EXTRA_SIZE"

@@ -19,6 +19,7 @@ We run the same Spark job again and again, and change only one thing at a time:
 - **Experiment A, more data:** 2 workers stay fixed. The input grows from 100 MB to 500 MB, 1 GB and 2 GB.
 - **Experiment B, more workers:** the input stays at 2 GB. The cluster grows from 1 to 2 to 5 workers.
 - **Experiment C, more partitions:** 2 GB and 2 workers stay fixed. We split the data into 4, 8, 16, 32 and 64 partitions.
+- **Extension, bigger data:** we continue Experiment A to 5 GB and 10 GB, and repeat Experiment B at 10 GB. Same machines, so the results stay comparable. We want to see if more data makes extra workers pay off.
 
 Every setting runs 3 times, and we report the median. Before the timed runs on a fresh or resized cluster, we do one warm-up run that we don't count.
 
@@ -114,6 +115,17 @@ cd ~/budget-travel-spark-scaling/gcp
 ./run_experiments.sh expB          # Experiment B, 1 worker
 ./cluster.sh resize 5
 ./run_experiments.sh expB          # Experiment B, 5 workers
+./cluster.sh delete
+
+# Extension (optional): bigger data on the same machines
+./cluster.sh create 2
+./run_experiments.sh make-data-extra   # builds 10GB, reuses the clean base copy
+./run_experiments.sh expA-extra        # 5GB and 10GB on 2 workers
+./cluster.sh delete
+./cluster.sh create 1
+./run_experiments.sh expB 10GB         # 1 worker
+./cluster.sh resize 5
+./run_experiments.sh expB 10GB         # 5 workers
 ./cluster.sh delete
 
 ./collect_results.sh               # tables and graphs in analysis/results/

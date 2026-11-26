@@ -20,7 +20,7 @@ export DATA_SIZES="100MB,500MB,1GB,2GB,5GB"
 
 # Experiment A - input data scalability: cluster fixed at 1 master + 2 workers
 export EXPA_WORKERS=2
-export EXPA_SIZES="100MB 500MB 1GB 2GB"            # add 5GB only if the instructor approves
+export EXPA_SIZES="100MB 500MB 1GB 2GB"            # required sizes; 5GB and 10GB are in the extension below
 
 # Experiment B - worker scalability: data fixed at 2 GB, workers 1, 2, 5
 export EXPB_SIZE="2GB"
@@ -29,5 +29,10 @@ export EXPB_WORKERS="1 2 5"                        # 10 = optional, needs quota 
 # Experiment C (the optional bonus) - partition scalability: 2 GB, 1 master + 2 workers, only the partition count changes
 export EXPC_SIZE="2GB"
 export EXPC_PARTITIONS="4 8 16 32 64"
+
+# Extension (optional, Nov 25) - bigger data on the SAME machines, so results stay comparable
+export EXTRA_DATA_SIZES="10GB"                      # built later with: ./run_experiments.sh make-data-extra
+export EXPA_EXTRA_SIZES="5GB 10GB"                  # Experiment A continues on 2 workers
+export EXPB_EXTRA_SIZE="10GB"                       # Experiment B repeated at 10 GB (1 and 5 workers)
 
 export REPS=3                                      # 3 runs per point; report all runs + the median

@@ -8,6 +8,11 @@
 #   ./run_experiments.sh expC          # Exp C (bonus): 2 GB, 2 workers, partitions 4..64, 3 reps
 #   ./run_experiments.sh validation    # once: the original (not resized) data, to check the ranking and clusters
 #
+# Extension (optional): bigger data on the same machines
+#   ./run_experiments.sh make-data-extra   # once: build 10GB from the clean base copy (base is reused)
+#   ./run_experiments.sh expA-extra        # Exp A continued: 5GB and 10GB on 2 workers, 3 reps
+#   ./run_experiments.sh expB 10GB         # Exp B at 10GB on the current worker count (1 or 5)
+#
 # Built-in rules (guidelines section 5):
 #   - the script reads the real worker count from the cluster, so the record is always correct
 #   - one warm-up run after every create/resize (not counted)
@@ -34,9 +39,18 @@ need_workers() {  # stop if the cluster does not have the worker count this expe
 
 warmup() { submit budget_value_job.py --size=100MB --workers="$1" --experiment=warmup --rep=0; }
 
-case "${1:?make-data|smoke|expA|expB|expC|validation}" in
+case "${1:?make-data|smoke|expA|expB|expC|validation|make-data-extra|expA-extra}" in
   make-data)
     submit make_datasets.py --sizes="$DATA_SIZES" ;;
+  make-data-extra)
+    submit make_datasets.py --sizes="${EXTRA_DATA_SIZES// /,}" --reuse-base ;;
+  expA-extra)
+    need_workers "$EXPA_WORKERS"; warmup "$EXPA_WORKERS"
+    for rep in $(seq 1 "$REPS"); do
+      for size in $EXPA_EXTRA_SIZES; do
+        submit budget_value_job.py --size="$size" --workers="$EXPA_WORKERS" --experiment=expA --rep="$rep"
+      done
+    done ;;
   validation)
     W=$(current_workers)
     submit budget_value_job.py --size=original --workers="$W" --experiment=validation --rep=1 ;;
@@ -51,12 +65,13 @@ case "${1:?make-data|smoke|expA|expB|expC|validation}" in
       done
     done ;;
   expB)
+    SIZE="${2:-$EXPB_SIZE}"                         # default 2GB; "./run_experiments.sh expB 10GB" for the extension
     W=$(current_workers); warmup "$W"
     if [[ "$W" == "$EXPA_WORKERS" ]]; then
-      echo "Note: the 2 GB / $W-worker runs from Exp A already count as B2. Running $REPS more anyway."
+      echo "Note: the $SIZE / $W-worker runs from Exp A already count as B2. Running $REPS more anyway."
     fi
     for rep in $(seq 1 "$REPS"); do
-      submit budget_value_job.py --size="$EXPB_SIZE" --workers="$W" --experiment=expB --rep="$rep"
+      submit budget_value_job.py --size="$SIZE" --workers="$W" --experiment=expB --rep="$rep"
     done ;;
   expC)
     need_workers "$EXPA_WORKERS"; warmup "$EXPA_WORKERS"

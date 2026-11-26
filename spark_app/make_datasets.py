@@ -7,7 +7,7 @@
 #      multiLine=true. A multiLine CSV cannot be split, so Spark uses 1 task per file.
 #   2. Removes those line breaks and saves a clean "base" copy as ~128 MB files.
 #      Now Spark can split the data into many tasks.
-#   3. Builds each dataset size (100MB, 500MB, 1GB, 2GB, 5GB) from the base copy:
+#   3. Builds each dataset size (100MB, 500MB, 1GB, 2GB, 5GB, and later 10GB) from the base copy:
 #        smaller than the base -> random sample
 #        bigger than the base  -> full copies with new IDs (+ a sample for the rest)
 #      The mix of Airbnb and review data stays the same at every size.
@@ -18,6 +18,8 @@
 # Example (Dataproc):
 #   gcloud dataproc jobs submit pyspark make_datasets.py --cluster=comp644-project \
 #       --region=us-central1 -- --bucket=gs://my-bucket --sizes=100MB,500MB,1GB,2GB,5GB
+#   Add one more size later, without rebuilding the clean base copy:
+#       ... -- --bucket=gs://my-bucket --sizes=10GB --reuse-base
 
 import argparse
 import json
@@ -121,6 +123,15 @@ def describe_dataset(spark, folder):
     }
 
 
+def read_manifest(spark, path):
+    # The manifest is one small JSON text file. Missing (first run) -> start empty.
+    try:
+        lines = [row.value for row in spark.read.text(path).collect()]
+    except Exception:  # the folder does not exist yet
+        return {}
+    return json.loads("\n".join(lines)) if lines else {}
+
+
 def build_one_size(spark, bucket, base, label):
     # Step 3: make one dataset size from the clean base copy
     target_bytes = size_label_to_bytes(label)
@@ -135,12 +146,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--bucket", required=True, help="gs://bucket, or a local folder for testing")
     parser.add_argument("--sizes", default="100MB,500MB,1GB,2GB,5GB", help="comma-separated size labels")
+    parser.add_argument("--reuse-base", action="store_true",
+                        help="skip steps 1-2 and use the clean base copy that is already in the bucket")
     args = parser.parse_args()
     bucket = args.bucket.rstrip("/")
     labels = [label.strip() for label in args.sizes.split(",") if label.strip()]
 
     spark = SparkSession.builder.appName("comp644-make-datasets").getOrCreate()
-    build_base_copy(spark, bucket)
+    if not args.reuse_base:
+        build_base_copy(spark, bucket)
 
     # Re-read the clean copy (now splittable) and keep it in memory for all sizes
     base = {}
@@ -149,7 +163,9 @@ def main():
         base[source] = {"df": spark.read.options(**CSV_OPTIONS).csv(path).cache(),
                         "bytes": folder_size_bytes(spark, path)}
 
-    manifest = {}
+    # Keep the sizes that were built before, and add or replace the ones built now
+    manifest_path = f"{bucket}/data/manifest_json"
+    manifest = read_manifest(spark, manifest_path)
     for label in labels:
         manifest[label] = build_one_size(spark, bucket, base, label)
         print(label, json.dumps(manifest[label]))
@@ -157,7 +173,7 @@ def main():
     # Step 4: save the manifest (overwrite is allowed, so a re-run does not fail)
     manifest_text = json.dumps(manifest, indent=2)
     (spark.createDataFrame([(manifest_text,)], ["manifest"])
-     .coalesce(1).write.mode("overwrite").text(f"{bucket}/data/manifest_json"))
+     .coalesce(1).write.mode("overwrite").text(manifest_path))
     spark.stop()
 
 

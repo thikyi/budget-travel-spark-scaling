@@ -162,8 +162,11 @@ def experiment_a(runs, workers, out_dir):
 
 # Experiment B: workers grow, data fixed
 
-def experiment_b(runs, size, prices, out_dir):
+def experiment_b(runs, size, prices, out_dir, extra=False):
+    # extra=True: the optional bigger-data run (e.g. 10GB). Same tables and graphs, file names marked "extra"
     normal_runs = runs[(runs["size_label"] == size) & runs["expc_partitions"].isna()]
+    if normal_runs.empty:
+        return None
     summary = median_by(normal_runs, "workers").sort_values("workers").reset_index(drop=True)
 
     baseline = summary.iloc[0]  # should be the 1-worker run
@@ -176,15 +179,16 @@ def experiment_b(runs, size, prices, out_dir):
     summary["relative_efficiency_pct"] = summary["speedup"] / summary["ideal_speedup"] * 100
     summary["cluster_cost_per_hour"] = prices["master"] + summary["workers"] * prices["worker"]
     summary["cost_per_run_usd"] = summary["cluster_cost_per_hour"] * summary["median_s"] / 3600
-    summary.to_csv(out_dir / "expB_summary.csv", index=False)
+    prefix, tag = (f"extra_{size}_", "Extra") if extra else ("", None)
+    summary.to_csv(out_dir / (f"expB_{size}_summary.csv" if extra else "expB_summary.csv"), index=False)
 
     worker_counts = list(summary["workers"])
     graphs = [
-        ("graph3_expB_workers_vs_time.png", f"Graph 3 - Workers vs execution time ({size})",
+        ("graph3_expB_workers_vs_time.png", f"{tag or 'Graph 3'} - Workers vs execution time ({size})",
          "execution time (s)", "median_s", baseline["median_s"] / summary["ideal_speedup"], "ideal (time / N)"),
-        ("graph4_expB_workers_vs_speedup.png", f"Graph 4 - Workers vs speedup ({size}, baseline = 1 worker)",
+        ("graph4_expB_workers_vs_speedup.png", f"{tag or 'Graph 4'} - Workers vs speedup ({size}, baseline = 1 worker)",
          "speedup T1 / TN", "speedup", summary["ideal_speedup"], "ideal (linear)"),
-        ("graph5_expB_workers_vs_efficiency.png", f"Graph 5 - Workers vs relative efficiency ({size})",
+        ("graph5_expB_workers_vs_efficiency.png", f"{tag or 'Graph 5'} - Workers vs relative efficiency ({size})",
          "relative efficiency (%)", "relative_efficiency_pct", [100] * len(summary), "100% = perfect scaling"),
     ]
     for file_name, title, y_label, column, reference, reference_label in graphs:
@@ -193,10 +197,24 @@ def experiment_b(runs, size, prices, out_dir):
         plot_reference(ax, summary["workers"], reference, reference_label)
         ax.set_xticks(worker_counts)
         ax.set_ylim(bottom=0)
-        save_chart(fig, out_dir / file_name)
+        save_chart(fig, out_dir / f"{prefix}{file_name}")
 
-    cost_bars(summary, size, out_dir / "extra_expB_cost_per_run.png")
+    cost_bars(summary, size, out_dir / f"extra_{size}_expB_cost_per_run.png" if extra
+              else out_dir / "extra_expB_cost_per_run.png")
     return summary
+
+
+def speedup_by_size(summaries, out_dir):
+    # One chart, one line per data size: does more data make extra workers pay off?
+    fig, ax = new_chart("Extra - Speedup by data size (baseline = 1 worker)", "worker nodes", "speedup T1 / TN")
+    for color, (size, summary) in zip([BLUE, ORANGE, GREEN], summaries.items()):
+        ax.plot(summary["workers"], summary["speedup"], color=color, linewidth=2, marker="o",
+                markersize=8, label=f"measured, {size}")
+    workers = sorted({w for summary in summaries.values() for w in summary["workers"]})
+    plot_reference(ax, workers, workers, "ideal (linear)")
+    ax.set_xticks(workers)
+    ax.set_ylim(bottom=0)
+    save_chart(fig, out_dir / "extra_expB_speedup_by_size.png")
 
 
 def cost_bars(summary, size, path):
@@ -277,6 +295,7 @@ def main():
     parser.add_argument("--expA-workers", type=int, default=2)
     parser.add_argument("--expB-size", default="2GB")
     parser.add_argument("--expC-size", default="2GB")
+    parser.add_argument("--expB-extra-size", default="", help="optional bigger size for Exp B, e.g. 10GB")
     # Approximate prices incl. the Dataproc fee - check the Google Cloud pricing calculator
     parser.add_argument("--master-cost", type=float, default=0.23, help="$/hour, n4-standard-4")
     parser.add_argument("--worker-cost", type=float, default=0.115, help="$/hour, n1-standard-2")
@@ -292,6 +311,11 @@ def main():
     exp_a = experiment_a(runs, args.expA_workers, out_dir)
     exp_b = experiment_b(runs, args.expB_size, prices, out_dir)
     exp_c = experiment_c(runs, args.expC_size, out_dir)
+    exp_b_extra = None
+    if args.expB_extra_size:
+        exp_b_extra = experiment_b(runs, args.expB_extra_size, prices, out_dir, extra=True)
+    if exp_b is not None and exp_b_extra is not None:
+        speedup_by_size({args.expB_size: exp_b, args.expB_extra_size: exp_b_extra}, out_dir)
     config_table = config_cost_table(runs, prices, out_dir)
 
     write_summary(out_dir, len(runs), [
@@ -303,6 +327,10 @@ def main():
          ["workers", "worker_vcpus", "runs", "median_s", "min_s", "max_s", "speedup",
           "ideal_speedup", "relative_efficiency_pct", "cost_per_run_usd"],
          "Speedup and efficiency use the 1-worker median as the baseline (T1)."),
+        (f"Extension - worker scalability ({args.expB_extra_size})", exp_b_extra,
+         ["workers", "worker_vcpus", "runs", "median_s", "min_s", "max_s", "speedup",
+          "ideal_speedup", "relative_efficiency_pct", "cost_per_run_usd"],
+         "Optional bigger-data run on the same machines. Same formulas as Experiment B."),
         (f"Experiment C - partition scalability ({args.expC_size}, {args.expA_workers} workers)", exp_c,
          ["partitions", "runs", "median_s", "min_s", "max_s"],
          "The time includes the repartition(N) shuffle."),
